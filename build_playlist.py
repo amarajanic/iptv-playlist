@@ -27,20 +27,27 @@ BASE = "https://iptv-org.github.io/iptv"
 #                 (useful to shrink big worldwide categories like News)
 # ---------------------------------------------------------------------------
 GROUPS = [
-    {
-        "name": "EX-YU",
-        "sources": [
-            "countries/ba.m3u",  # Bosnia and Herzegovina (listed first)
-            "countries/hr.m3u",  # Croatia
-            "countries/rs.m3u",  # Serbia
-            "countries/me.m3u",  # Montenegro
-            "countries/si.m3u",  # Slovenia
-            "countries/mk.m3u",  # North Macedonia
-            "countries/xk.m3u",  # Kosovo
-        ],
-    },
+    # --- EX-YU, one folder per country ---
+    {"name": "EX-YU | BiH", "sources": ["countries/ba.m3u"]},
+    {"name": "EX-YU | Hrvatska", "sources": ["countries/hr.m3u"]},
+    {"name": "EX-YU | Srbija", "sources": ["countries/rs.m3u"]},
+    {"name": "EX-YU | Crna Gora", "sources": ["countries/me.m3u"]},
+    {"name": "EX-YU | Slovenija", "sources": ["countries/si.m3u"]},
+    {"name": "EX-YU | Makedonija", "sources": ["countries/mk.m3u"]},
+    {"name": "EX-YU | Kosovo", "sources": ["countries/xk.m3u"]},
     {"name": "Albania", "sources": ["countries/al.m3u"]},
-    {"name": "International", "sources": ["countries/int.m3u"]},
+
+    # --- International, trimmed and split by country ---
+    # Uses iptv-org's "International" list, keeping only the countries below.
+    # Add a folder by copying a line and changing the name and country code.
+    {"name": "INT | UK", "sources": ["countries/int.m3u"], "only_countries": ["uk", "gb"]},
+    {"name": "INT | USA", "sources": ["countries/int.m3u"], "only_countries": ["us"]},
+    {"name": "INT | Germany & Austria", "sources": ["countries/int.m3u"], "only_countries": ["de", "at"]},
+    {"name": "INT | France", "sources": ["countries/int.m3u"], "only_countries": ["fr"]},
+    {"name": "INT | Italy", "sources": ["countries/int.m3u"], "only_countries": ["it"]},
+    {"name": "INT | Turkey", "sources": ["countries/int.m3u"], "only_countries": ["tr"]},
+
+    # --- Categories ---
     {
         "name": "News",
         "sources": ["categories/news.m3u"],
@@ -60,6 +67,9 @@ GROUPS = [
 # Skip channels whose name contains any of these words (case-insensitive).
 # Example: ["[Geo-blocked]", "[Not 24/7]"]
 EXCLUDE_KEYWORDS = []
+
+# Only keep streams the LG TV apps can play (old mmsh/rtmp/udp links are dropped).
+ALLOWED_SCHEMES = ("http://", "https://")
 
 USER_AGENT = "Mozilla/5.0 (custom-iptv-playlist-builder)"
 
@@ -148,6 +158,8 @@ def build(check, timeout, workers):
             for e in entries:
                 name = channel_name(e["extinf"])
                 if e["url"] in seen:
+                    continue
+                if not e["url"].lower().startswith(ALLOWED_SCHEMES):
                     continue
                 if any(k.lower() in name.lower() for k in EXCLUDE_KEYWORDS):
                     continue
